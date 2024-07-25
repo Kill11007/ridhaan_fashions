@@ -36,20 +36,9 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
         title: Center(child: Text(widget.title)),
       ),
       body: const CustomerForm(),
@@ -72,31 +61,41 @@ class _CustomerFormState extends State<CustomerForm> {
   final inputDiscountController = TextEditingController();
 
   void _calculateTotal() {
+    _total = 0;
     setState(() {
-      var discount = inputDiscountController.text ?? "0";
-      var price = inputPriceController.text ?? "0";
-      _total = int.parse(price) - int.parse(discount);
+      for (Product p in _products) {
+        _total += p.price;
+      }
+      String discount;
+      if (inputDiscountController.text.isEmpty) {
+        discount = "0";
+      } else {
+        discount = inputDiscountController.text;
+      }
+      _total -= int.parse(discount);
+    });
+    print('total: $_total');
+  }
+
+  final List<Product> _products = [Product(id: UniqueKey().toString())];
+
+  void _addProduct() {
+    setState(() {
+      _products.add(Product(id: UniqueKey().toString()));
     });
   }
 
-  final List<Product> _products = [Product()];
-
-  void addProduct() {
-    setState(() {
-      _products.add(Product());
-    });
-  }
-
-  void removeProduct(int index) {
+  void _removeProduct(int index) {
+    Product p = _products[index];
+    print('Removed Index:  $index, Product: ${p.price}, ${p.name}');
     setState(() {
       _products.removeAt(index);
+      _calculateTotal();
     });
   }
 
   @override
   void dispose() {
-    // Clean up the controller when the widget is disposed.
-    inputPriceController.dispose();
     inputDiscountController.dispose();
     super.dispose();
   }
@@ -153,16 +152,23 @@ class _CustomerFormState extends State<CustomerForm> {
                     width: 10,
                   ),
                   FilledButton(
-                      onPressed: addProduct,
-                      child: Text(
-                        "+",
-                        style: theme.textTheme.headlineSmall!
-                            .copyWith(color: theme.colorScheme.onPrimary),
-                      )),
+                    onPressed: _addProduct,
+                    child: Text(
+                      "+",
+                      style: theme.textTheme.headlineSmall!
+                          .copyWith(color: theme.colorScheme.onPrimary),
+                    ),
+                  ),
                 ],
               ),
             ),
-            for (int i = 0; i < _products.length; i++) ProductForm(product: _products[i], onRemove: () => removeProduct(i)),
+            for (int i = 0; i < _products.length; i++)
+              ProductForm(
+                product: _products[i],
+                onRemove: () => _removeProduct(i),
+                onPriceChange: _calculateTotal,
+                key: ValueKey(_products[i].id),
+              ),
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: TextFormField(
@@ -230,10 +236,21 @@ class _CustomerFormState extends State<CustomerForm> {
 }
 
 class ProductForm extends StatelessWidget {
-  const ProductForm({required this.product, required this.onRemove, super.key});
+  const ProductForm(
+      {required this.product,
+      required this.onRemove,
+      required this.onPriceChange,
+      super.key});
 
   final Product product;
   final VoidCallback onRemove;
+  final VoidCallback onPriceChange;
+
+  void _changePrice(String text){
+    text = text.isEmpty ? "0" : text;
+    product.price = int.parse(text);
+    onPriceChange.call();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -262,7 +279,7 @@ class ProductForm extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(8.0),
             child: TextFormField(
-              // onChanged: (text) => _calculateTotal(text),
+              onChanged: (text) => _changePrice(text),
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),
                 labelText: 'Price',
@@ -290,66 +307,6 @@ class ProductForm extends StatelessWidget {
                 style: theme.textTheme.headlineLarge!
                     .copyWith(color: theme.colorScheme.onPrimary),
               ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget getRow(ThemeData theme) {
-    return Row(
-      children: [
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextFormField(
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: 'Product Name',
-              ),
-              // The validator receives the text that the user has entered.
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter product name';
-                }
-                return null;
-              },
-            ),
-          ),
-        ),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextFormField(
-              // onChanged: (text) => _calculateTotal(text),
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: 'Price',
-              ),
-              // The validator receives the text that the user has entered.
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter Price';
-                }
-                return null;
-              },
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            ),
-          ),
-        ),
-        Expanded(
-          flex: 0,
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: FilledButton(
-              child: Text(
-                "-",
-                style: theme.textTheme.headlineLarge!
-                    .copyWith(color: theme.colorScheme.onPrimary),
-              ),
-              onPressed: () {},
             ),
           ),
         ),
