@@ -197,7 +197,7 @@ class _CustomerFormState extends State<CustomerForm> {
                   child: Text(
                     "Total: ",
                     textAlign: TextAlign.left,
-                    style: theme.textTheme.displaySmall!
+                    style: theme.textTheme.headlineMedium!
                         .copyWith(color: theme.colorScheme.inverseSurface),
                   ),
                 ),
@@ -206,27 +206,48 @@ class _CustomerFormState extends State<CustomerForm> {
                   child: Text(
                     '$_total',
                     textAlign: TextAlign.right,
-                    style: theme.textTheme.displaySmall!
+                    style: theme.textTheme.headlineLarge!
                         .copyWith(color: theme.colorScheme.inverseSurface),
                   ),
                 ),
               ],
             ),
-            Padding(
-              padding: const EdgeInsets.only(top: 8.0),
-              child: ElevatedButton(
-                onPressed: () {
-                  // Validate returns true if the form is valid, or false otherwise.
-                  if (_formKey.currentState!.validate()) {
-                    // If the form is valid, display a snackbar. In the real world,
-                    // you'd often call a server or save the information in a database.
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Processing Data')),
-                    );
-                  }
-                },
-                child: const Text('Submit'),
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // Validate returns true if the form is valid, or false otherwise.
+                      if (_formKey.currentState!.validate()) {
+                        // If the form is valid, display a snackbar. In the real world,
+                        // you'd often call a server or save the information in a database.
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Processing Data')),
+                        );
+                      }
+                    },
+                    child: const Text('Save'),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // Validate returns true if the form is valid, or false otherwise.
+                      if (_formKey.currentState!.validate()) {
+                        // If the form is valid, display a snackbar. In the real world,
+                        // you'd often call a server or save the information in a database.
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Processing Data')),
+                        );
+                      }
+                    },
+                    child: const Text('Send'),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
