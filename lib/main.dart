@@ -66,11 +66,9 @@ class _CustomerFormState extends State<CustomerForm> {
       for (Product p in _products) {
         _total += p.price;
       }
-      String discount;
-      if (inputDiscountController.text.isEmpty) {
+      String discount = inputDiscountController.text;
+      if (discount.isEmpty) {
         discount = "0";
-      } else {
-        discount = inputDiscountController.text;
       }
       _total -= int.parse(discount);
     });
@@ -180,13 +178,6 @@ class _CustomerFormState extends State<CustomerForm> {
                   border: OutlineInputBorder(),
                   labelText: 'Discount',
                 ),
-                // The validator receives the text that the user has entered.
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter Price';
-                  }
-                  return null;
-                },
               ),
             ),
             Row(
@@ -267,10 +258,14 @@ class ProductForm extends StatelessWidget {
   final VoidCallback onRemove;
   final VoidCallback onPriceChange;
 
-  void _changePrice(String text){
-    text = text.isEmpty ? "0" : text;
-    product.price = int.parse(text);
+  void _changePrice(String price){
+    price = price.isEmpty ? "0" : price;
+    product.price = int.parse(price);
     onPriceChange.call();
+  }
+
+  void _changeName(String name) {
+    product.name = name;
   }
 
   @override
@@ -284,7 +279,7 @@ class ProductForm extends StatelessWidget {
             child: TextFormField(
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),
-                labelText: 'Product Name',
+                labelText: 'Name',
               ),
               // The validator receives the text that the user has entered.
               validator: (value) {
@@ -293,6 +288,7 @@ class ProductForm extends StatelessWidget {
                 }
                 return null;
               },
+              onChanged: (text) => _changeName(text),
             ),
           ),
         ),
@@ -334,4 +330,5 @@ class ProductForm extends StatelessWidget {
       ],
     );
   }
+
 }
