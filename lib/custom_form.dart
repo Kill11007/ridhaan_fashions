@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:ridhaan_fashions/bill.dart';
+import 'package:ridhaan_fashions/Invoice.dart';
 import 'package:ridhaan_fashions/customer.dart';
 import 'package:ridhaan_fashions/database_helper.dart';
+import 'package:ridhaan_fashions/pdf_api.dart';
+import 'package:ridhaan_fashions/pdf_invoice_api.dart';
 import 'package:ridhaan_fashions/product.dart';
 import 'package:ridhaan_fashions/product_form.dart';
+import 'package:ridhaan_fashions/supplier.dart';
 
 class CustomerBillForm extends StatefulWidget {
   const CustomerBillForm({super.key});
@@ -14,6 +17,54 @@ class CustomerBillForm extends StatefulWidget {
 }
 
 class _CustomerBillFormState extends State<CustomerBillForm> {
+  static final TODAY_DATE = DateTime.now();
+  static final INVOICE = Invoice(
+    supplier: const Supplier(
+      name: 'Ridhaan Fashions',
+      address: 'Kasba Road Modinagar Gaziabad',
+    ),
+    customer: Customer(
+      name: 'Mayank',
+      phoneNumber: '9717011122',
+      totalPurchase: 0,
+    ),
+    info: InvoiceInfo(
+      date: TODAY_DATE,
+      description: '',
+      number: '${DateTime.now().year}-9999', //TODO Generate it Bill Number & PHONE NUMBER
+    ),
+    items: const [
+      InvoiceItem(
+        description: 'Coffee',
+        price: 500,
+      ),
+      InvoiceItem(
+        description: 'Water',
+        price: 300,
+      ),
+      InvoiceItem(
+        description: 'Orange',
+        price: 350,
+      ),
+      InvoiceItem(
+        description: 'Apple',
+        price: 399,
+      ),
+      InvoiceItem(
+        description: 'Mango',
+        price: 159,
+      ),
+      InvoiceItem(
+        description: 'Blue Berries',
+        price: 99,
+      ),
+      InvoiceItem(
+        description: 'Lemon',
+        price: 129,
+      ),
+    ],
+  );
+
   int _total = 0;
   final db = DatabaseHelper();
   final _formKey = GlobalKey<FormState>();
@@ -70,28 +121,33 @@ class _CustomerBillFormState extends State<CustomerBillForm> {
 
   void _saveForm() async {
     print("Save Form");
-    if (_formKey.currentState!.validate()) {
-      // If the form is valid, display a snackbar. In the real world,
-      // you'd often call a server or save the information in a database.
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Processing Data')),
-      );
-      _formKey.currentState!.save();
-      await db.addBill(Bill(
-          phoneNumber: phoneNumber,
-          customerName: customerName,
-          products: _products,
-          discount: discount));
-      db.fetchBills().then(
-            (value) => {for (Bill bill in value) print(bill)},
-          );
-      db.fetchCustomers().then(
-            (customers) => {for (Customer c in customers) print(c)},
-          );
-    }
+    final pdfFile = await PdfInvoiceApi.generate(INVOICE);
+    PdfApi.openFile(pdfFile);
+
+    // if (_formKey.currentState!.validate()) {
+    //   // If the form is valid, display a snackbar. In the real world,
+    //   // you'd often call a server or save the information in a database.
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     const SnackBar(content: Text('Processing Data')),
+    //   );
+    //   _formKey.currentState!.save();
+    //   var bill = Bill(
+    //       phoneNumber: phoneNumber,
+    //       customerName: customerName,
+    //       products: _products,
+    //       discount: discount);
+    //   await db.addBill(bill);
+    //   db.fetchBills().then(
+    //         (value) => {for (Bill bill in value) print(bill)},
+    //       );
+    //   db.fetchCustomers().then(
+    //         (customers) => {for (Customer c in customers) print(c)},
+    //       );
+    //
+    // }
   }
 
-  void _sendForm() {
+  void _sendForm() async {
     print("Send Form");
     _saveForm();
   }
@@ -228,7 +284,9 @@ class _CustomerBillFormState extends State<CustomerBillForm> {
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: ElevatedButton(
-                    onPressed: _sendForm,
+                    onPressed: () async {
+                      _sendForm();
+                    },
                     child: const Text('Send'),
                   ),
                 ),
