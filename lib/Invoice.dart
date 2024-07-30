@@ -6,22 +6,22 @@ class Invoice {
   final Supplier supplier;
   final Customer customer;
   final List<InvoiceItem> items;
+  final int discount;
 
   const Invoice({
     required this.info,
     required this.supplier,
     required this.customer,
     required this.items,
+    required this.discount
   });
 }
 
 class InvoiceInfo {
-  final String description;
   final String number;
   final DateTime date;
 
   const InvoiceInfo({
-    required this.description,
     required this.number,
     required this.date,
   });

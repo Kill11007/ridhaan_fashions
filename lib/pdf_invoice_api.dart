@@ -24,7 +24,7 @@ class PdfInvoiceApi {
       footer: (context) => buildFooter(invoice),
     ));
 
-    return PdfApi.saveDocument(name: 'my_invoice.pdf', pdf: pdf);
+    return PdfApi.saveDocument(name: '${invoice.info.number}.pdf', pdf: pdf);
   }
 
   static Widget buildHeader(Invoice invoice) => Column(
@@ -32,28 +32,15 @@ class PdfInvoiceApi {
         children: [
           SizedBox(height: 1 * PdfPageFormat.cm),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               buildSupplierAddress(invoice.supplier),
-              Container(
-                height: 50,
-                width: 50,
-                child: BarcodeWidget(
-                  barcode: Barcode.qrCode(),
-                  data: invoice.info.number,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 1 * PdfPageFormat.cm),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              buildCustomerAddress(invoice.customer),
               buildInvoiceInfo(invoice.info),
             ],
           ),
+          SizedBox(height: 1 * PdfPageFormat.cm),
+          buildCustomerAddress(invoice.customer),
         ],
       );
 
@@ -92,6 +79,8 @@ class PdfInvoiceApi {
           Text(supplier.name, style: TextStyle(fontWeight: FontWeight.bold)),
           SizedBox(height: 1 * PdfPageFormat.mm),
           Text(supplier.address),
+          SizedBox(height: 1 * PdfPageFormat.mm),
+          Text(supplier.contactNumber),
         ],
       );
 
@@ -112,7 +101,6 @@ class PdfInvoiceApi {
       'Price'
     ];
     final data = invoice.items.map((item) {
-      // final total = item.unitPrice * item.quantity * (1 + item.vat);
       return [
         item.description,
         '${item.price}',
@@ -137,7 +125,7 @@ class PdfInvoiceApi {
     final netTotal = invoice.items
         .map((item) => item.price)
         .reduce((item1, item2) => item1 + item2);
-    final total = netTotal;
+    final total = netTotal - invoice.discount;
 
     return Container(
       alignment: Alignment.centerRight,
@@ -149,6 +137,12 @@ class PdfInvoiceApi {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                buildText(
+                  title: 'Discount',
+                  value: '${invoice.discount}',
+                  unite: true,
+                ),
+                Divider(),
                 buildText(
                   title: 'Grand Total',
                   titleStyle: TextStyle(

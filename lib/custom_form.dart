@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:ridhaan_fashions/Invoice.dart';
+import 'package:ridhaan_fashions/bill.dart';
 import 'package:ridhaan_fashions/customer.dart';
 import 'package:ridhaan_fashions/database_helper.dart';
-import 'package:ridhaan_fashions/pdf_api.dart';
 import 'package:ridhaan_fashions/pdf_invoice_api.dart';
 import 'package:ridhaan_fashions/product.dart';
 import 'package:ridhaan_fashions/product_form.dart';
+import 'package:ridhaan_fashions/send_pdf.dart';
 import 'package:ridhaan_fashions/supplier.dart';
+import 'package:whatsapp/whatsapp.dart';
 
 class CustomerBillForm extends StatefulWidget {
   const CustomerBillForm({super.key});
@@ -17,8 +19,12 @@ class CustomerBillForm extends StatefulWidget {
 }
 
 class _CustomerBillFormState extends State<CustomerBillForm> {
-  static final TODAY_DATE = DateTime.now();
-  static final INVOICE = Invoice(
+  static const rfSupplier = Supplier(
+      name: 'Ridhaan Fashions',
+      address: 'Kasba Road Modinagar Gaziabad',
+      contactNumber: '9625612771');
+
+  /*static final INVOICE = Invoice(
     supplier: const Supplier(
       name: 'Ridhaan Fashions',
       address: 'Kasba Road Modinagar Gaziabad',
@@ -30,8 +36,8 @@ class _CustomerBillFormState extends State<CustomerBillForm> {
     ),
     info: InvoiceInfo(
       date: TODAY_DATE,
-      description: '',
-      number: '${DateTime.now().year}-9999', //TODO Generate it Bill Number & PHONE NUMBER
+      number:
+          '${DateTime.now().year}-9999', //TODO Generate it Bill Number & PHONE NUMBER
     ),
     items: const [
       InvoiceItem(
@@ -63,10 +69,11 @@ class _CustomerBillFormState extends State<CustomerBillForm> {
         price: 129,
       ),
     ],
-  );
+  );*/
 
   int _total = 0;
   final db = DatabaseHelper();
+  final pdfHelper = SendPDF();
   final _formKey = GlobalKey<FormState>();
   final inputPriceController = TextEditingController();
   final inputDiscountController = TextEditingController();
@@ -119,32 +126,61 @@ class _CustomerBillFormState extends State<CustomerBillForm> {
     super.dispose();
   }
 
+  String whatsAppPhoneNumber = rfSupplier.contactNumber;
+
   void _saveForm() async {
     print("Save Form");
-    final pdfFile = await PdfInvoiceApi.generate(INVOICE);
-    PdfApi.openFile(pdfFile);
 
-    // if (_formKey.currentState!.validate()) {
-    //   // If the form is valid, display a snackbar. In the real world,
-    //   // you'd often call a server or save the information in a database.
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     const SnackBar(content: Text('Processing Data')),
-    //   );
-    //   _formKey.currentState!.save();
-    //   var bill = Bill(
-    //       phoneNumber: phoneNumber,
-    //       customerName: customerName,
-    //       products: _products,
-    //       discount: discount);
-    //   await db.addBill(bill);
-    //   db.fetchBills().then(
-    //         (value) => {for (Bill bill in value) print(bill)},
-    //       );
-    //   db.fetchCustomers().then(
-    //         (customers) => {for (Customer c in customers) print(c)},
-    //       );
-    //
-    // }
+    if (_formKey.currentState!.validate()) {
+      // If the form is valid, display a snackbar. In the real world,
+      // you'd often call a server or save the information in a database.
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sending Bill')),
+      );
+      _formKey.currentState!.save();
+      var bill = Bill(
+        phoneNumber: phoneNumber,
+        customerName: customerName,
+        products: _products,
+        discount: discount,
+      );
+      int billId = await db.addBill(bill);
+      /*db.fetchBills().then(
+            (value) => {
+              for (Bill bill in value) print(bill),
+            },
+          );
+      db.fetchCustomers().then(
+            (customers) => {
+              for (Customer c in customers) print(c),
+            },
+          );*/
+      sendPDF(bill, billId).whenComplete(() => ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Bill Sent!')),
+      ),);
+    }
+  }
+
+  Future<void> sendPDF(Bill bill, int billId) async {
+    final pdfFile = await PdfInvoiceApi.generate(
+      Invoice(
+        info: InvoiceInfo(
+            number: '$billId${bill.phoneNumber}', date: DateTime.now()),
+        supplier: rfSupplier,
+        customer: Customer(
+            phoneNumber: bill.phoneNumber,
+            name: bill.customerName,
+            totalPurchase: bill.total),
+        items: [
+          for (Product p in bill.products)
+            InvoiceItem(description: p.name, price: p.price)
+        ],
+        discount: bill.discount,
+      ),
+    );
+    // PdfApi.openFile(pdfFile);
+    // pdfHelper.sendPDF(pdfFile, bill.phoneNumber);
+    pdfHelper.sendPDFWithMediaId('1194368978429982', bill.phoneNumber);
   }
 
   void _sendForm() async {
