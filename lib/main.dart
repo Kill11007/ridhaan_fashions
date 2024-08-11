@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:ridhaan_fashions/custom_form.dart';
 import 'package:ridhaan_fashions/customers.dart';
 
+import 'daily_stats.dart';
+
 void main() {
   runApp(const MyApp());
 }
@@ -40,9 +42,11 @@ class _MyHomePageState extends State<MyHomePage> {
   int currentPageIndex = 0;
   final Widget homePage;
   late Widget currentWidget;
+
   _MyHomePageState(this.homePage) {
     currentWidget = homePage;
   }
+
   void _onDestinationChange(int index) {
     setState(() {
       if (currentPageIndex == index) return;
@@ -57,6 +61,11 @@ class _MyHomePageState extends State<MyHomePage> {
         case 1:
           {
             currentWidget = const SearchableCustomerList();
+            break;
+          }
+        case 2:
+          {
+            currentWidget = const DailyStats();
             break;
           }
       }
@@ -84,6 +93,11 @@ class _MyHomePageState extends State<MyHomePage> {
             selectedIcon: Icon(Icons.people),
             icon: Icon(Icons.people_outline),
             label: "Customers",
+          ),
+          NavigationDestination(
+            selectedIcon: Icon(Icons.bar_chart),
+            icon: Icon(Icons.bar_chart_outlined),
+            label: "Stats",
           ),
         ],
       ),
