@@ -1,15 +1,16 @@
 import 'dart:io';
+
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/widgets.dart';
-import 'package:ridhaan_fashions/Invoice.dart';
 import 'package:ridhaan_fashions/customer.dart';
+import 'package:ridhaan_fashions/invoice.dart';
 import 'package:ridhaan_fashions/pdf_api.dart';
 import 'package:ridhaan_fashions/supplier.dart';
 import 'package:ridhaan_fashions/utils.dart';
 
 class PdfInvoiceApi {
-  static Future<File> generate(Invoice invoice) async {
+  static Future<File> generate(Invoice invoice, String fileName) async {
     final pdf = Document();
 
     pdf.addPage(MultiPage(
@@ -24,7 +25,7 @@ class PdfInvoiceApi {
       footer: (context) => buildFooter(invoice),
     ));
 
-    return PdfApi.saveDocument(name: '${invoice.info.number}.pdf', pdf: pdf);
+    return PdfApi.saveDocument(name: fileName, pdf: pdf);
   }
 
   static Widget buildHeader(Invoice invoice) => Column(
@@ -96,10 +97,7 @@ class PdfInvoiceApi {
       );
 
   static Widget buildInvoice(Invoice invoice) {
-    final headers = [
-      'Item',
-      'Price'
-    ];
+    final headers = ['Item', 'Price'];
     final data = invoice.items.map((item) {
       return [
         item.description,

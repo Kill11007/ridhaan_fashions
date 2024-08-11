@@ -30,7 +30,7 @@ class DatabaseHelper {
         join(await getDatabasesPath(), 'ridhaan_fashions_database.db');
     var database = openDatabase(
       dbPath,
-      version: 9,
+      version: 10,
       onCreate: _onCreate,
       onUpgrade: (db, oldVersion, newVersion) =>
           _onUpgrade(db, oldVersion, newVersion),
@@ -50,10 +50,7 @@ class DatabaseHelper {
     ''');
     }
 
-    if (newVersion == 9) {
-      db.execute('''
-        DROP TABLE IF EXISTS bills;
-      ''');
+    if (newVersion == 10) {
       db.execute('''
       CREATE TABLE IF NOT EXISTS bills(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -82,6 +79,8 @@ class DatabaseHelper {
         products TEXT,
         discount INTEGER,
         total INTEGER);
+    ''');
+    db.execute('''
       CREATE TABLE IF NOT EXISTS customers(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         phoneNumber TEXT UNIQUE,
@@ -136,6 +135,16 @@ class DatabaseHelper {
       return Customer.fromDb(maps.first);
     }
     return null;
+  }
+
+  Future<List<Customer>> fetchCustomersByPhoneNumber(String phoneNumber) async {
+    var client = await db;
+    final Future<List<Map<String, dynamic>>> futureMaps = client.query(
+        'customers',
+        where: 'phoneNumber LIKE ?',
+        whereArgs: ['%$phoneNumber%']);
+    var maps = await futureMaps;
+    return [for (Map<String, dynamic> map in maps) Customer.fromDb(map)];
   }
 
   Future<List<Bill>> fetchBills() async {

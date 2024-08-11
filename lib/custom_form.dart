@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:ridhaan_fashions/Invoice.dart';
 import 'package:ridhaan_fashions/bill.dart';
 import 'package:ridhaan_fashions/customer.dart';
 import 'package:ridhaan_fashions/database_helper.dart';
+import 'package:ridhaan_fashions/invoice.dart';
 import 'package:ridhaan_fashions/pdf_invoice_api.dart';
 import 'package:ridhaan_fashions/product.dart';
 import 'package:ridhaan_fashions/product_form.dart';
 import 'package:ridhaan_fashions/send_pdf.dart';
 import 'package:ridhaan_fashions/supplier.dart';
-import 'package:whatsapp/whatsapp.dart';
 
 class CustomerBillForm extends StatefulWidget {
   const CustomerBillForm({super.key});
@@ -19,6 +18,9 @@ class CustomerBillForm extends StatefulWidget {
 }
 
 class _CustomerBillFormState extends State<CustomerBillForm> {
+  static const String messageTemplate = '''
+Thank you for shopping on Ridhaan Fashions.
+Please find attached your bill for the recent purchase.''';
   static const rfSupplier = Supplier(
       name: 'Ridhaan Fashions',
       address: 'Kasba Road Modinagar Gaziabad',
@@ -37,7 +39,7 @@ class _CustomerBillFormState extends State<CustomerBillForm> {
     info: InvoiceInfo(
       date: TODAY_DATE,
       number:
-          '${DateTime.now().year}-9999', //TODO Generate it Bill Number & PHONE NUMBER
+          '${DateTime.now().year}-9999',
     ),
     items: const [
       InvoiceItem(
@@ -155,13 +157,22 @@ class _CustomerBillFormState extends State<CustomerBillForm> {
               for (Customer c in customers) print(c),
             },
           );*/
-      sendPDF(bill, billId).whenComplete(() => ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Bill Sent!')),
-      ),);
+      sendPDF(bill, billId).then(
+        (value) => ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Bill Saved $value',
+            ),
+          ),
+        ),
+      );
+
+      _formKey.currentState?.reset();
     }
   }
 
-  Future<void> sendPDF(Bill bill, int billId) async {
+  Future<String> sendPDF(Bill bill, int billId) async {
+    final String fileName = '${bill.phoneNumber}_BILL$billId.pdf';
     final pdfFile = await PdfInvoiceApi.generate(
       Invoice(
         info: InvoiceInfo(
@@ -177,10 +188,20 @@ class _CustomerBillFormState extends State<CustomerBillForm> {
         ],
         discount: bill.discount,
       ),
+      fileName,
     );
-    // PdfApi.openFile(pdfFile);
-    // pdfHelper.sendPDF(pdfFile, bill.phoneNumber);
-    pdfHelper.sendPDFWithMediaId('1194368978429982', bill.phoneNumber);
+    //pdfHelper.sendPDF(pdfFile, bill.phoneNumber);
+    //pdfHelper.sendPDFWithMediaId('1194368978429982', bill.phoneNumber);
+
+    try {
+      pdfHelper.launchWhatsappWithMobileNumber(
+          bill.phoneNumber, messageTemplate);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error in launching the whatsapp.')),
+      );
+    }
+    return fileName;
   }
 
   void _sendForm() async {
