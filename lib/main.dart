@@ -48,28 +48,30 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _onDestinationChange(int index) {
-    setState(() {
-      if (currentPageIndex == index) return;
-      currentPageIndex = index;
-      print("Destination Index Selected: $currentPageIndex");
-      switch (currentPageIndex) {
-        case 0:
-          {
-            currentWidget = homePage;
-            break;
-          }
-        case 1:
-          {
-            currentWidget = const SearchableCustomerList();
-            break;
-          }
-        case 2:
-          {
-            currentWidget = const DailyStats();
-            break;
-          }
-      }
-    });
+    setState(
+      () {
+        if (currentPageIndex == index) return;
+        currentPageIndex = index;
+        print("Destination Index Selected: $currentPageIndex");
+        switch (currentPageIndex) {
+          case 0:
+            {
+              currentWidget = homePage;
+              break;
+            }
+          case 1:
+            {
+              currentWidget = const SearchableCustomerList();
+              break;
+            }
+          case 2:
+            {
+              currentWidget = DailyStats();
+              break;
+            }
+        }
+      },
+    );
   }
 
   @override
@@ -85,9 +87,9 @@ class _MyHomePageState extends State<MyHomePage> {
         onDestinationSelected: (index) => _onDestinationChange(index),
         destinations: const <NavigationDestination>[
           NavigationDestination(
-            selectedIcon: Icon(Icons.home),
-            icon: Icon(Icons.home_outlined),
-            label: "Home",
+            selectedIcon: Icon(Icons.text_snippet),
+            icon: Icon(Icons.text_snippet_outlined),
+            label: "Bill",
           ),
           NavigationDestination(
             selectedIcon: Icon(Icons.people),
@@ -98,6 +100,11 @@ class _MyHomePageState extends State<MyHomePage> {
             selectedIcon: Icon(Icons.bar_chart),
             icon: Icon(Icons.bar_chart_outlined),
             label: "Stats",
+          ),
+          NavigationDestination(
+            selectedIcon: Icon(Icons.home),
+            icon: Icon(Icons.home_outlined),
+            label: "Dashboard",
           ),
         ],
       ),

@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:path/path.dart';
 import 'package:ridhaan_fashions/bill.dart';
 import 'package:ridhaan_fashions/customer.dart';
+import 'package:ridhaan_fashions/daily_sale.dart';
+import 'package:ridhaan_fashions/purchase.dart';
 import 'package:sqflite/sqflite.dart';
 
 class DatabaseHelper {
@@ -30,7 +32,7 @@ class DatabaseHelper {
         join(await getDatabasesPath(), 'ridhaan_fashions_database.db');
     var database = openDatabase(
       dbPath,
-      version: 10,
+      version: 11,
       onCreate: _onCreate,
       onUpgrade: (db, oldVersion, newVersion) =>
           _onUpgrade(db, oldVersion, newVersion),
@@ -68,6 +70,39 @@ class DatabaseHelper {
         totalPurchase INTEGER);
     ''');
     }
+
+    if (newVersion == 11) {
+      db.execute('''
+      CREATE TABLE IF NOT EXISTS daily_sales(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        createdDateTime TEXT,
+        updatedDateTime TEXT,
+        totalSale INTEGER);
+    ''');
+      db.execute('''
+      CREATE TABLE IF NOT EXISTS daily_purchases(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        createdDateTime TEXT,
+        updatedDateTime TEXT,
+        totalPurchase INTEGER);
+    ''');
+      try {
+        db.execute('''
+      ALTER TABLE BILLS ADD COLUMN createdDateTime TEXT;
+    ''');
+        db.execute('''
+      ALTER TABLE BILLS ADD COLUMN updatedDateTime TEXT;
+    ''');
+        db.execute('''
+      ALTER TABLE customers ADD COLUMN createdDateTime TEXT;
+    ''');
+        db.execute('''
+      ALTER TABLE customers ADD COLUMN updatedDateTime TEXT;
+    ''');
+      } catch (ex) {
+        print("Exception");
+      }
+    }
   }
 
   void _onCreate(Database db, int version) {
@@ -78,6 +113,8 @@ class DatabaseHelper {
         customerName TEXT,
         products TEXT,
         discount INTEGER,
+        createdDateTime TEXT,
+        updatedDateTime TEXT,
         total INTEGER);
     ''');
     db.execute('''
@@ -85,6 +122,8 @@ class DatabaseHelper {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         phoneNumber TEXT UNIQUE,
         name TEXT,
+        createdDateTime TEXT,
+        updatedDateTime TEXT,
         totalPurchase INTEGER);
     ''');
     print("Database was created!");
@@ -112,6 +151,77 @@ class DatabaseHelper {
   Future<int> addCustomer(Customer customer) async {
     var client = await db;
     return client.insert('customers', customer.toMapForDb(),
+        conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  Future<int> addDailySale(Sale sale) async {
+    var client = await db;
+    return client.insert('daily_sales', sale.toMapForDb(),
+        conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  Future<int> totalSale() async {
+    var client = await db;
+    var result =
+        await client.rawQuery("SELECT SUM(sale) AS total FROM daily_sales");
+    return int.parse(result[0]["total"].toString());
+  }
+
+  Future<int> totalPurchase() async {
+    var client = await db;
+    var result = await client
+        .rawQuery("SELECT SUM(purchase) AS total FROM daily_purchases");
+    return int.parse(result[0]["total"].toString());
+  }
+
+  Future<List<Map<String, dynamic>>> dailySaleAndPurchase() async {
+    var client = await db;
+    return await client.rawQuery('''SELECT 
+    DATE(createdDateTime) AS period, 
+    SUM(totalSale) AS totalSales, 
+    SUM(totalPurchase) AS totalPurchases
+FROM 
+    (SELECT createdDateTime, totalSale, 0 AS totalPurchase FROM daily_sales 
+     UNION ALL 
+     SELECT createdDateTime, 0 AS totalSale, totalPurchase FROM daily_purchases)
+GROUP BY 
+    period;
+        ''');
+  }
+
+  Future<List<Map<String, dynamic>>> monthlySaleAndPurchase() async {
+    var client = await db;
+    return await client.rawQuery('''SELECT 
+    STRFTIME('%Y-%m', createdDateTime) AS period, 
+    SUM(totalSale) AS totalSales, 
+    SUM(totalPurchase) AS totalPurchases
+FROM 
+    (SELECT createdDateTime, totalSale, 0 AS totalPurchase FROM daily_sales 
+     UNION ALL 
+     SELECT createdDateTime, 0 AS totalSale, totalPurchase FROM daily_purchases)
+GROUP BY 
+    period;
+        ''');
+  }
+
+  Future<List<Map<String, dynamic>>> weeklySaleAndPurchase() async {
+    var client = await db;
+    return await client.rawQuery('''SELECT 
+    STRFTIME('%Y-%W', createdDateTime) AS period, 
+    SUM(totalSale) AS totalSales, 
+    SUM(totalPurchase) AS totalPurchases
+FROM 
+    (SELECT createdDateTime, totalSale, 0 AS totalPurchase FROM daily_sales 
+     UNION ALL 
+     SELECT createdDateTime, 0 AS totalSale, totalPurchase FROM daily_purchases)
+GROUP BY 
+    period;
+        ''');
+  }
+
+  Future<int> addDailyPurchase(Purchase purchase) async {
+    var client = await db;
+    return client.insert('daily_purchases', purchase.toMapForDb(),
         conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
@@ -161,6 +271,22 @@ class DatabaseHelper {
         client.query('customers');
     var maps = await futureMaps;
     return [for (Map<String, dynamic> map in maps) Customer.fromDb(map)];
+  }
+
+  Future<List<Sale>> fetchDailySale() async {
+    var client = await db;
+    final Future<List<Map<String, dynamic>>> futureMaps =
+        client.query('daily_sales');
+    var maps = await futureMaps;
+    return [for (Map<String, dynamic> map in maps) Sale.fromDb(map)];
+  }
+
+  Future<List<Purchase>> fetchDailyPurchase() async {
+    var client = await db;
+    final Future<List<Map<String, dynamic>>> futureMaps =
+        client.query('daily_purchases');
+    var maps = await futureMaps;
+    return [for (Map<String, dynamic> map in maps) Purchase.fromDb(map)];
   }
 
   Future<int> updateBill(Bill newBill) async {
