@@ -66,7 +66,7 @@ class _MyHomePageState extends State<MyHomePage> {
             }
           case 2:
             {
-              currentWidget = DailyStats();
+              currentWidget = const DailyStats();
               break;
             }
         }
@@ -100,11 +100,6 @@ class _MyHomePageState extends State<MyHomePage> {
             selectedIcon: Icon(Icons.bar_chart),
             icon: Icon(Icons.bar_chart_outlined),
             label: "Stats",
-          ),
-          NavigationDestination(
-            selectedIcon: Icon(Icons.home),
-            icon: Icon(Icons.home_outlined),
-            label: "Dashboard",
           ),
         ],
       ),

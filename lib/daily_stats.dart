@@ -118,6 +118,7 @@ class _DailyStatsState extends State<DailyStats> {
         ),
         SizedBox.expand(
           child: DraggableScrollableSheet(
+            initialChildSize: 0.58,
             builder: (context, scrollController) {
               return Container(
                 clipBehavior: Clip.hardEdge,
